@@ -1,0 +1,17 @@
+Ac and Bc are the partial derivatives of system dynamics with respect to the states and inputs.
+
+F = (kF kF kF kF)*(u1 u2 u3 u4)’  		(1)
+xB’’ = uB’ = 1/m(F*sin(beta))     		(2)
+yB’’ = vB’ = 1/m(-F*sin(alpha))   		(3)
+zB’’ = wB’ = 1/m(cos(alpha)*cos(beta)*F - m*g) 	(4)
+
+Ac(4,8) = d(2)/d(beta) = F/m*cos(beta) = g*cos(beta) = beta small ~ g = 9.81
+Ac(5,7) = d(3)/d(alpha) = F/m*cos(alpha) = -g*cos(alpha) = alpha small ~ g = -9.81
+
+Bc(6,1) = d(4)/d(u1) = 1/m*cos(alpha)*cos(beta)*dF/du1 = cos(alpha)*cos(beta)/m*kF = alpha & beta small ~ kF/m = 3.5
+Bc(6,2) … Bc(6,4) analog
+
+
+Bc(10:13,1:4) = jac(M/I) where M = [M_alpha M_beta M_gamma]’
+
+
