@@ -1,4 +1,4 @@
-%% section 1
+
 clear all
 close all
 clc
@@ -21,16 +21,16 @@ disp('Data successfully loaded')
 %%%%%%%%%%%%%%%%%%%%%    First MPC controller %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART I - First MPC controller...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Setup
 n_states = 7;
 n_input = 4;
 N = 5;
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
-Q = eye(n_states);
-R = eye(n_input);
+
+Q = diag([1,10,10,0.5,1,1,1]);
+R = 0.1*eye(n_input);
 P = eye(n_states);
-
-
 
 %variables
 x = sdpvar(n_states, N);
@@ -41,31 +41,46 @@ z_max = 1;
 alpha_beta_max = 10/360 * 2 * pi;
 alpha_beta_dot_max = 15 / 360 * 2 * pi;
 gamma_dot_max = 60 / 360 * 2 * pi;
-u_min = 0;
-u_max = 1;
+u_min = 0-us;
+u_max = 1-us;
 
 x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
 
-% TODO: Calculate terminal set
+%% Terminal Set
+
+% Terminal set it positive invariant set for the system x(k+1) = (A +
+% BF)x(k), where F is constructed as the infinite horizon control input and
+% Pinf is the terminal constraint.
+
+[Pinf,L,Finf] = dare(sys.A,sys.B,Q,R);
+
+terminal_model = LTISystem('A',sys.A - sys.B * Finf, 'Ts', sys.Ts);
+
+mpt_mpc = MPCController(terminal_model,N-1);
+fprintf('calculate invariant st\n')
+terminal_set = mpt_mpc.model.invariantSet()
+
+terminal_constraint = ismember(x(:,N),terminal_set);
 
 
-%set constraints
+%% Constraints
+%set constraints. order does not matter.
 fprintf('setting constraints \n')
-constraints = [];
+constraints = [terminal_constraint];
 for i = 2:N
     % set system constraints
-    constraints = [constraints, x(:,i) == sys.A* x(:,i-1) + sys.B * u(:,i-1)];
+    constraints = constraints + [x(:,i) == sys.A* x(:,i-1) + sys.B * u(:,i-1)];
     
     % set state constraints
-    constraints =  [constraints, -z_max <= x(2:3,i) <= z_max];
-    constraints =  [constraints, -alpha_beta_max <= x(2:3,i) <= alpha_beta_max];
-    constraints = [constraints, -alpha_beta_dot_max <= x(5:6,i) <= alpha_beta_dot_max];
-    constraints = [constraints, -gamma_dot_max <= x(5:6,i) <= gamma_dot_max];
+    constraints =  constraints +  [-z_max <= x(2:3,i) <= z_max];
+    constraints =  constraints + [-alpha_beta_max <= x(2:3,i) <= alpha_beta_max];
+    constraints = constraints + [-alpha_beta_dot_max <= x(5:6,i) <= alpha_beta_dot_max];
+    constraints = constraints + [-gamma_dot_max <= x(5:6,i) <= gamma_dot_max];
 
     % set input constraints
-    constraints = [constraints, u_min <= u(1:4,i) <= u_max]; %TODO2: non-linear input constraints?!
+    constraints = constraints + [u_min <= u(1:4,i) <= u_max];
 end
-constraints = [constraints, u_min <= u(1:4,1) <= u_max]; % constrain u1 as well.
+constraints = constraints + [u_min <= u(1:4,1) <= u_max]; % constrain u(1) alias u0 as well.
 
 % define objective function
 fprintf('setting objective function\n')
@@ -74,28 +89,14 @@ for i = 1:N-1
     objective = objective + x(:,i)' * Q * x(:,i) + u(:,i)' * R * u(:,i);
 end
 
-terminal_cost = x(:,N)' * P * x(:,N);
-objective = objective + terminal_cost;  %% TODO: Terminal cost - CORRECT??
+terminal_cost = x(:,N)' * Pinf * x(:,N);
+objective = objective + terminal_cost;
 
-%% section 2
-% import to mpt, calculate terminal set, convert back to yalmip:
-mpt_model = LTISystem('A',sys.A,'B',sys.B, 'Ts', sys.Ts);
-mpt_mpc = MPCController(mpt_model,N-1)
-yalmip_mpc = mpt_mpc.toYALMIP()
-yalmip_mpc.internal
-yalmip_mpc.constraints = constraints;
-yalmip_mpc.objective = objective;
-yalmip_mpc.variables.u = u;
-yalmip_mpc.variables.x = x;
-
-mpt_mpc.fromYALMIP(yalmip_mpc)
-fprintf('calculate invariant set\n')
-mpt_mpc.model.invariantSet() 
-
-% first column is x0
+% set first column to x0
 parameters = x(:,1);
 wanted = u(:,1);
 
+%% Do MPC
 fprintf('set up mpc problem\n')
 mpc_simple = optimizer(constraints, objective, [], parameters, wanted);
 
@@ -105,14 +106,14 @@ x_real = zeros(n_states,N);
 x_real(:,1) = x0;
 
 fprintf('do mpc\n')
+
 for i=1:N-1
     u_real(:,i)= mpc_simple(x_real(:,i));
     x_real(:,i+1) = sys.A * x_real(:,i) + sys.B * u_real(:,i);
 end
 
-y = sum(x_real);
-plot(y)
-
+%% simulation
+simQuad( sys, mpc_simple, 0, x0, 20);
 
 %%%%%%%%%%%%%%%%%%%%%  Reference Tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART II - Reference tracking...\n')
