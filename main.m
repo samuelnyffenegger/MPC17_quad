@@ -32,7 +32,7 @@ N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array 
 % cost matrices
 Q = diag([0.5,10,10,0.5,0.5,0.5,0.5])
 R = 0.1*eye(n_input)
-P = eye(n_states)
+
 
 % yalmip variables
 x = sdpvar(n_states, N);
@@ -118,12 +118,12 @@ fprintf('PART II - Reference tracking...\n')
 % Setup
 n_states = 7;
 n_input = 4;
-N =15; 
+N =5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([10,10,10,10,0,0,0.1])
-R = 0.001*eye(n_input)
+Q = diag([1,50,50,1,0.1,0.1,0.1])
+R = 0.1*eye(n_input)
 P = eye(n_states)
 Rs = eye(n_input)
 
@@ -142,17 +142,17 @@ C = [eye(4) zeros(4,3)];
 
 % state constraints
 z_dot_max = 1;
-alpha_beta_max = 10/360 * 2 * pi;
-alpha_beta_dot_max = 15 / 360 * 2 * pi;
-gamma_dot_max = 60 / 360 * 2 * pi;
-u_min = 0-us;
-u_max = 1-us;
+alpha_beta_max = degtorad(10);
+alpha_beta_dot_max = degtorad(15) ;
+gamma_dot_max = degtorad(60);
+u_min = 0-us
+u_max = 1-us
 
 x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
 r1 = [1 0.1745 -0.1745 1.7453]'; 
 
 % compute target state ts: (xr, ur)
-xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,4)])*[zeros(7,1); r1]
+xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,n_input)])*[zeros(n_states,1); r1]
 %xr = [r1; 0; 0; 0];
 %ur = xrur(n_states + 1 : end);
 
@@ -163,48 +163,55 @@ constraints_mpc = [];
 
 %target constraints
 constraints_mpc = constraints_mpc + [C*xr == r];
-onstraints_mpc = constraints_mpc + [(eye(n_states)-sys.A)*xr-sys.B*ur == 0];
+constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur == xr];
 
+%delta shifting
+constraints_mpc = constraints_mpc + [delta_x(:,1) == xk-xr];
+constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
+ 
 for i = 2:N
-    % system constraints
+    %system constraints
     constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1)];
     
-    % state constraints
+    %state constraints
     constraints_mpc =  constraints_mpc +  [-z_dot_max-xr(1) <= delta_x(1,i) <= z_dot_max-xr(1)];
     constraints_mpc =  constraints_mpc + [-alpha_beta_max-xr(2:3)  <= delta_x(2:3,i) <= alpha_beta_max-xr(2:3)];
     constraints_mpc = constraints_mpc + [-alpha_beta_dot_max-xr(5:6)  <= delta_x(5:6,i) <= alpha_beta_dot_max-xr(5:6)];
     constraints_mpc = constraints_mpc + [-gamma_dot_max-xr(7)  <= delta_x(7,i) <= gamma_dot_max-xr(7)];
 
-    % delta shifting
-    constraints_mpc = constraints_mpc + [delta_x(:,1) == xk-xr];
-    constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
+    %input constraints
     
-    % input constraints
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
 end
-constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ]; % constrain delta_u(1) alias u0 as well.
+constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
 
-% Objective / Cost Function
+%Objective / Cost Function
 fprintf('setting objective function\n')
 objective_mpc = 0;
 for i = 1:N
     objective_mpc = objective_mpc + delta_x(:,i)' * Q * delta_x(:,i) + delta_u(:,i)' * R * delta_u(:,i);
 end
 
-% [Pinf,L,Finf] = dare(sys.A,sys.B,Q,R);
-% 
-% P = eye(n_states);
-% terminal_cost = delta_x(:,N)' * P * delta_x(:,N);
-% objective_mpc = objective_mpc + terminal_cost;
+[Pinf,L,Finf] = dare(sys.A,sys.B,Q,R);
+
+terminal_cost = delta_x(:,N)' * Pinf * delta_x(:,N);
+objective_mpc = objective_mpc + terminal_cost;
 
 % Setup MPC
 fprintf('set up mpc problem\n')
 
 mpc_simple = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
 
-% Simulation
-fprintf('simulate system\n')
-simQuad( sys, mpc_simple, 0, zeros(7,1), 20, r1);
+
+% Simulation constant r
+fprintf('simulate system with constant r\n')
+simQuad( sys, mpc_simple, 0, zeros(7,1), 10, r1);
+
+fprintf('simulate system with varying r r\n')
+n_k = 150
+k = 1:n_k;
+rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,1,n_k) ];
+simQuad( sys, mpc_simple, 0, zeros(7,1), 20, rt);
 
 
 %%%%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
