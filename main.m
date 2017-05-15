@@ -333,7 +333,8 @@ fprintf('PART V - simulation of the nonlinear model...\n')
 % Part 5
 % run part 4 first
 close all
-w_eight = 2*pi*0.1; % rad/s
+w_eight = 2*pi*0.05; % rad/s
+t_sim = 4/(w_eight/(2*pi));
 sim('simulation2.mdl')
 
 
