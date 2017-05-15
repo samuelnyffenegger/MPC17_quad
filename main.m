@@ -25,18 +25,18 @@ fprintf('PART I - First MPC controller...\n')
 
 % Setup
 n_states = 7;
-n_input = 4;
+n_inputs = 4;
 N = 5; % TODO: Horizon length does not affect system output. Is this correct??
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
 Q = diag([0.5,10,10,0.5,0.5,0.5,0.5])
-R = 0.1*eye(n_input)
+R = 0.1*eye(n_inputs)
 
 
 % yalmip variables
 x = sdpvar(n_states, N);
-u = sdpvar(n_input, N);
+u = sdpvar(n_inputs, N);
 
 % state constraints
 z_dot_max = 1;
@@ -117,26 +117,26 @@ fprintf('PART II - Reference tracking...\n')
 
 % Setup
 n_states = 7;
-n_input = 4;
+n_inputs = 4;
 N =5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
 Q = diag([1,50,50,1,0.1,0.1,0.1])
-R = 0.1*eye(n_input)
+R = 0.1*eye(n_inputs)
 P = eye(n_states)
-Rs = eye(n_input)
+
 
 % yalmip variables
 delta_x = sdpvar(n_states, N,'full');
-delta_u = sdpvar(n_input, N,'full');
+delta_u = sdpvar(n_inputs, N,'full');
 
 r = sdpvar(4,1,'full');
 xr = sdpvar(n_states,1,'full')
-ur = sdpvar(n_input,1,'full')
+ur = sdpvar(n_inputs,1,'full')
 
 xk = sdpvar(n_states,1,'full')
-uk = sdpvar(n_input,1,'full')
+uk = sdpvar(n_inputs,1,'full')
 
 C = [eye(4) zeros(4,3)];
 
@@ -152,7 +152,7 @@ x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
 r1 = [1 0.1745 -0.1745 1.7453]'; 
 
 % compute target state ts: (xr, ur)
-xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,n_input)])*[zeros(n_states,1); r1]
+xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,n_inputs)])*[zeros(n_states,1); r1]
 %xr = [r1; 0; 0; 0];
 %ur = xrur(n_states + 1 : end);
 
@@ -200,59 +200,57 @@ objective_mpc = objective_mpc + terminal_cost;
 % Setup MPC
 fprintf('set up mpc problem\n')
 
-mpc_simple = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
+innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
 
 
 % Simulation constant r
 fprintf('simulate system with constant r\n')
-simQuad( sys, mpc_simple, 0, zeros(7,1), 10, r1);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1);
 
 fprintf('simulate system with varying r r\n')
 n_k = 150
 k = 1:n_k;
 rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,1,n_k) ];
-simQuad( sys, mpc_simple, 0, zeros(7,1), 20, rt);
+simQuad( sys, innerController, 0, zeros(7,1), 20, rt);
 
 
-%% %%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
 fprintf('PART III - First simulation of the nonlinear model...\n')
-close all; 
-innerController = mpc_simple; 
-sim('simulation1.mdl'); 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Part 3
+% Atention: Part 2 needs to be run before running this part.
+close all
+sim('simulation1.mdl')
 
-%% %%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART IV - Offset free MPC...\n')
-
-% define L
-Lx = eye(7);
-Ld = eye(7); 
-L = [Lx; Ld]; 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Part 4
+close all
 
 % Setup
 n_states = 7;
-n_dist = 7; 
-n_input = 4;
+n_inputs = 4;
 N =5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([1,50,50,1,0.1,0.1,0.1])
-R = 0.1*eye(n_input)
+Q = diag([10,50,50,1,0.1,0.1,0.1])
+R = 0.1*eye(n_inputs)
 P = eye(n_states)
-Rs = eye(n_input)
 
 % yalmip variables
 delta_x = sdpvar(n_states, N,'full');
-delta_u = sdpvar(n_input, N,'full');
+delta_u = sdpvar(n_inputs, N,'full');
 
 r = sdpvar(4,1,'full');
 xr = sdpvar(n_states,1,'full')
-ur = sdpvar(n_input,1,'full')
+ur = sdpvar(n_inputs,1,'full')
 
 xk = sdpvar(n_states,1,'full')
-uk = sdpvar(n_input,1,'full')
+uk = sdpvar(n_inputs,1,'full')
+
+d = sdpvar(n_states, 1, 'full')
 
 C = [eye(4) zeros(4,3)];
 
@@ -265,12 +263,7 @@ u_min = 0-us
 u_max = 1-us
 
 x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
-r1 = [1 0.1745 -0.1745 1.7453]'; 
-
-% compute target state ts: (xr, ur)
-xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,n_input)])*[zeros(n_states,1); r1]
-%xr = [r1; 0; 0; 0];
-%ur = xrur(n_states + 1 : end);
+r1 = [0.8 0.12 -0.12 pi/2]'; 
 
 % Constraints
 fprintf('setting constraints \n')
@@ -278,8 +271,8 @@ fprintf('setting constraints \n')
 constraints_mpc = [];
 
 %target constraints
-constraints_mpc = constraints_mpc + [C*xr == r];
-constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur == xr];
+constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 
 %delta shifting
 constraints_mpc = constraints_mpc + [delta_x(:,1) == xk-xr];
@@ -287,16 +280,14 @@ constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
  
 for i = 2:N
     %system constraints
-    constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1)];
-    
-    %state constraints
+    constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1)];  % add a disturbance d here? subtract d?
+%     %state constraints
     constraints_mpc =  constraints_mpc +  [-z_dot_max-xr(1) <= delta_x(1,i) <= z_dot_max-xr(1)];
     constraints_mpc =  constraints_mpc + [-alpha_beta_max-xr(2:3)  <= delta_x(2:3,i) <= alpha_beta_max-xr(2:3)];
     constraints_mpc = constraints_mpc + [-alpha_beta_dot_max-xr(5:6)  <= delta_x(5:6,i) <= alpha_beta_dot_max-xr(5:6)];
     constraints_mpc = constraints_mpc + [-gamma_dot_max-xr(7)  <= delta_x(7,i) <= gamma_dot_max-xr(7)];
-
-    %input constraints
-    
+% 
+%     %input constraints
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
 end
 constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
@@ -313,18 +304,37 @@ end
 terminal_cost = delta_x(:,N)' * Pinf * delta_x(:,N);
 objective_mpc = objective_mpc + terminal_cost;
 
+
+% Disturbance estimation:
+Aug = [sys.A eye(n_states); zeros(n_states) eye(n_states)];
+Baug = [sys.B; zeros(n_states,n_inputs)];
+Caug = [eye(n_states) eye(n_states)];
+
+Lx = diag([1 0 0 0 1 1 1]);
+Ld = diag([1 0 0 0 1 1 1]);
+L = [Lx; Ld];
+
+filter = struct('Af', Aug - L*Caug, 'Bf', [Baug L]);
+
+
 % Setup MPC
 fprintf('set up mpc problem\n')
 
-mpc_simple = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
+innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 
 
+% Simulation constant r
+fprintf('simulate system with constant r and disturbance filter\n')
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1,filter);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Part 5
+% run part 4 first
+close all
+sim('simulation2.mdl')
+
 
 %%%%%%%%%%%%%%%%%%%%%%%  Slew Rate Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART VI - Slew Rate Constraints...\n')
