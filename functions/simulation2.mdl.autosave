@@ -36,7 +36,7 @@ Model {
       UnitExpr		      "inherit"
     }
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.206"
+    ComputedModelVersion    "1.198"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -130,9 +130,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "samueln"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Mon May 15 17:57:45 2017"
-  RTWModifiedTimeStamp	  416771821
-  ModelVersionFormat	  "1.%<AutoIncrement:206>"
+  LastModifiedDate	  "Mon May 15 17:32:50 2017"
+  RTWModifiedTimeStamp	  416770488
+  ModelVersionFormat	  "1.%<AutoIncrement:198>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -236,7 +236,7 @@ Model {
 	  DisabledProps		  []
 	  Description		  ""
 	  StartTime		  "0.0"
-	  StopTime		  "20"
+	  StopTime		  "10"
 	  AbsTol		  "auto"
 	  FixedStep		  "auto"
 	  InitialStep		  "auto"
@@ -1098,19 +1098,6 @@ Model {
       Floating		      off
     }
     Block {
-      BlockType		      Sin
-      SineType		      "Time based"
-      TimeSource	      "Use simulation time"
-      Amplitude		      "1"
-      Bias		      "0"
-      Frequency		      "1"
-      Phase		      "0"
-      Samples		      "10"
-      Offset		      "0"
-      SampleTime	      "-1"
-      VectorParams1D	      on
-    }
-    Block {
       BlockType		      Step
       Time		      "1"
       Before		      "0"
@@ -1189,6 +1176,18 @@ Model {
       ContinuousStateAttributes	"''"
       Realization	      "auto"
     }
+    Block {
+      BlockType		      Trigonometry
+      Operator		      "sin"
+      ApproximationMethod     "None"
+      NumberOfIterations      "11"
+      OutputSignalType	      "auto"
+      SampleTime	      "-1"
+    }
+    Block {
+      BlockType		      ZeroOrderHold
+      SampleTime	      "1"
+    }
   }
   System {
     Name		    "simulation2"
@@ -1206,7 +1205,7 @@ Model {
     ShowPageBoundaries	    off
     ZoomFactor		    "94"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "256"
+    SIDHighWatermark	    "244"
     Block {
       BlockType		      Clock
       Name		      "Clock"
@@ -1435,9 +1434,8 @@ Model {
       BlockType		      ManualSwitch
       Name		      "Manual Switch"
       SID		      "223"
-      Position		      [295, 207, 325, 243]
-      ZOrder		      3
-      CurrentSetting	      "0"
+      Position		      [215, 217, 245, 253]
+      ZOrder		      -13
     }
     Block {
       BlockType		      Mux
@@ -1487,16 +1485,16 @@ Model {
     }
     Block {
       BlockType		      SubSystem
-      Name		      "Reference filter \n(LP)"
+      Name		      "Reference filter"
       SID		      "145"
       Ports		      [1, 1]
-      Position		      [190, 102, 245, 178]
+      Position		      [285, 197, 340, 273]
       ZOrder		      -18
       RequestExecContextInheritance off
       Variant		      off
       System {
-	Name			"Reference filter \n(LP)"
-	Location		[0, 23, 1440, 852]
+	Name			"Reference filter"
+	Location		[0, 23, 1440, 896]
 	Open			off
 	ModelBrowserVisibility	off
 	ModelBrowserWidth	200
@@ -1659,28 +1657,28 @@ Model {
     }
     Block {
       BlockType		      Scope
-      Name		      "Scope1"
-      SID		      "252"
+      Name		      "Scope"
+      SID		      "244"
       Ports		      [1]
-      Position		      [435, 64, 465, 96]
-      ZOrder		      2
+      Position		      [295, 134, 325, 166]
+      ZOrder		      1
       ScopeSpecificationString "Simulink.scopes.TimeScopeBlockCfg('CurrentConfiguration', extmgr.ConfigurationSet(extm"
       "gr.Configuration('Core','General UI',true),extmgr.Configuration('Core','Source UI',true),extmgr.Configuration('S"
-      "ources','WiredSimulink',true,'DataLoggingVariableName','ScopeData2'),extmgr.Configuration('Visuals','Time Domain"
-      "',true,'SerializedDisplays',{struct('MinYLimReal','-1.51767','MaxYLimReal','3.65913','YLabelReal','','MinYLimMag"
-      "','0.00000','MaxYLimMag','3.65913','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'Axes"
-      "Color',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.06666"
-      "66666666667;0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.8313"
-      "72549019608 0.0745098039215686;0.717647058823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215686"
-      " 0.650980392156863],'Title','%<SignalLabel>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLines"
-      "',4,'LineNames',{{'Manual Switch:1','Manual Switch:2','Manual Switch:3','Manual Switch:4'}},'ShowContent',true,'"
-      "Placement',1)},'DisplayPropertyDefaults',struct('MinYLimReal','-1.51767','MaxYLimReal','3.65913','YLabelReal',''"
-      ",'MinYLimMag','0.00000','MaxYLimMag','3.65913','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase'"
-      ",false,'AxesColor',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',"
-      "[0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;1 1 0.0666666666666667;0.7176470588"
-      "23529 0.274509803921569 1;0.392156862745098 0.831372549019608 0.0745098039215686;0.0588235294117647 1 1;1 0.0745"
-      "098039215686 0.650980392156863])),extmgr.Configuration('Tools','Plot Navigation',true),extmgr.Configuration('Too"
-      "ls','Measurements',true,'Version','2016b')),'Version','2016b')"
+      "ources','WiredSimulink',true),extmgr.Configuration('Visuals','Time Domain',true,'SerializedDisplays',{struct('Mi"
+      "nYLimReal','-0.3927','MaxYLimReal','3.53429','YLabelReal','','MinYLimMag','0.00000','MaxYLimMag','3.53429','Lege"
+      "ndVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.686274"
+      "509803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.0666666666666667;0.0745098039215686 0.6235294"
+      "11764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.831372549019608 0.0745098039215686;0.7176470"
+      "58823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863],'Title','%<SignalLab"
+      "el>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLines',4,'LineNames',{{'Manual Switch:1','Man"
+      "ual Switch:2','Manual Switch:3','Manual Switch:4'}},'ShowContent',true,'Placement',1)},'DisplayPropertyDefaults'"
+      ",struct('MinYLimReal','-0.3927','MaxYLimReal','3.53429','YLabelReal','','MinYLimMag','0.00000','MaxYLimMag','3.5"
+      "3429','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor"
+      "',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[0.0745098039215686 0.623529411764706 1;1"
+      " 0.411764705882353 0.16078431372549;1 1 0.0666666666666667;0.717647058823529 0.274509803921569 1;0.3921568627450"
+      "98 0.831372549019608 0.0745098039215686;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr."
+      "Configuration('Tools','Plot Navigation',true),extmgr.Configuration('Tools','Measurements',true,'Version','2016b'"
+      ")),'Version','2016b')"
       NumInputPorts	      "1"
     }
     Block {
@@ -2830,7 +2828,7 @@ Model {
     }
     Block {
       BlockType		      SubSystem
-      Name		      "reference 1\nsteps"
+      Name		      "reference 1"
       SID		      "218"
       Ports		      [0, 1]
       Position		      [110, 113, 145, 167]
@@ -2838,7 +2836,7 @@ Model {
       RequestExecContextInheritance off
       Variant		      off
       System {
-	Name			"reference 1\nsteps"
+	Name			"reference 1"
 	Location		[0, 23, 1440, 852]
 	Open			off
 	ModelBrowserVisibility	off
@@ -2979,162 +2977,169 @@ Model {
 	TiledPaperMargins	[0.500000, 0.500000, 0.500000, 0.500000]
 	TiledPageScale		1
 	ShowPageBoundaries	off
-	ZoomFactor		"175"
+	ZoomFactor		"200"
+	Block {
+	  BlockType		  Gain
+	  Name			  "Gain"
+	  SID			  "158"
+	  Position		  [130, 35, 160, 65]
+	  ZOrder		  -8
+	  Gain			  "pi/3"
+	  ParamDataTypeStr	  "Inherit: Inherit via internal rule"
+	  OutDataTypeStr	  "Inherit: Inherit via internal rule"
+	  SaturateOnIntegerOverflow off
+	}
 	Block {
 	  BlockType		  Mux
-	  Name			  "Mux"
-	  SID			  "245"
+	  Name			  "Mux3"
+	  SID			  "226"
 	  Ports			  [4, 1]
-	  Position		  [180, 276, 185, 314]
-	  ZOrder		  15
+	  Position		  [395, 95, 400, 150]
+	  ZOrder		  -9
 	  ShowName		  off
 	  DisplayOption		  "bar"
-	  Port {
-	    PortNumber		    1
-	    Name		    "r"
-	    RTWStorageClass	    "Auto"
-	    DataLoggingNameMode	    "SignalName"
-	  }
 	}
 	Block {
-	  BlockType		  Scope
-	  Name			  "Scope"
-	  SID			  "246"
-	  Ports			  [1]
-	  Position		  [240, 224, 270, 256]
-	  ZOrder		  14
-	  ScopeSpecificationString "C++SS(StrPVP('SaveName','ScopeData'),StrPVP('SaveName','ScopeData1'))"
-	  NumInputPorts		  "1"
-	}
-	Block {
-	  BlockType		  Step
-	  Name			  "Step1"
-	  SID			  "253"
-	  Position		  [-65, 265, -35, 295]
-	  ZOrder		  16
-	  ShowName		  off
-	  Time			  "4"
-	  After			  "3"
-	  SampleTime		  "0"
+	  BlockType		  Reference
+	  Name			  "Ramp"
+	  SID			  "157"
+	  Ports			  [0, 1]
+	  Position		  [25, 35, 55, 65]
+	  ZOrder		  -14
+	  LibraryVersion	  "1.388"
+	  SourceBlock		  "simulink/Sources/Ramp"
+	  SourceType		  "Ramp"
+	  ContentPreviewEnabled	  off
+	  slope			  "1/6"
+	  start			  "0"
+	  X0			  "0"
+	  VectorParams1D	  on
 	}
 	Block {
 	  BlockType		  Step
-	  Name			  "Step5"
-	  SID			  "254"
-	  Position		  [-65, 430, -35, 460]
-	  ZOrder		  17
+	  Name			  "Step3"
+	  SID			  "211"
+	  Position		  [190, 225, 220, 255]
+	  ZOrder		  -15
 	  ShowName		  off
 	  Time			  "0"
 	  After			  "pi"
 	  SampleTime		  "0"
 	}
 	Block {
-	  BlockType		  TransferFcn
-	  Name			  "Transfer Fcn"
-	  SID			  "255"
-	  Position		  [-5, 262, 55, 298]
-	  ZOrder		  18
-	  Denominator		  "[1.5 1]"
-	}
-	Block {
-	  BlockType		  TransferFcn
-	  Name			  "Transfer Fcn3"
-	  SID			  "256"
-	  Position		  [-5, 427, 55, 463]
-	  ZOrder		  19
-	  Denominator		  "[2 1]"
-	}
-	Block {
-	  BlockType		  Sin
-	  Name			  "alpha"
-	  SID			  "247"
-	  Ports			  [0, 1]
-	  Position		  [-65, 320, -35, 350]
-	  ZOrder		  11
-	  Frequency		  "f_eight"
+	  BlockType		  Step
+	  Name			  "Step4"
+	  SID			  "212"
+	  Position		  [190, 170, 220, 200]
+	  ZOrder		  -16
+	  ShowName		  off
+	  Time			  "4"
+	  After			  "2"
 	  SampleTime		  "0"
 	}
 	Block {
-	  BlockType		  Sin
-	  Name			  "beta"
-	  SID			  "248"
-	  Ports			  [0, 1]
-	  Position		  [-65, 375, -35, 405]
-	  ZOrder		  12
-	  Frequency		  "2*f_eight"
-	  SampleTime		  "0"
+	  BlockType		  Trigonometry
+	  Name			  "Trigonometric\nFunction"
+	  SID			  "163"
+	  Ports			  [1, 1]
+	  Position		  [205, 25, 235, 55]
+	  ZOrder		  -34
+	  Operator		  "cos"
+	}
+	Block {
+	  BlockType		  Trigonometry
+	  Name			  "Trigonometric\nFunction1"
+	  SID			  "164"
+	  Ports			  [1, 1]
+	  Position		  [205, 100, 235, 130]
+	  ZOrder		  -34
+	}
+	Block {
+	  BlockType		  ZeroOrderHold
+	  Name			  "Zero-Order\nHold1"
+	  SID			  "159"
+	  Position		  [75, 35, 110, 65]
+	  ZOrder		  -36
+	  SampleTime		  "6"
 	}
 	Block {
 	  BlockType		  Outport
 	  Name			  "ref"
 	  SID			  "227"
-	  Position		  [455, 288, 485, 302]
+	  Position		  [420, 118, 450, 132]
 	  ZOrder		  -37
 	  IconDisplay		  "Port number"
 	}
 	Line {
-	  ZOrder		  13
-	  SrcBlock		  "alpha"
+	  ZOrder		  1
+	  SrcBlock		  "Gain"
 	  SrcPort		  1
-	  Points		  [126, 0; 0, -45]
-	  DstBlock		  "Mux"
+	  Points		  [10, 0]
+	  Branch {
+	    ZOrder		    2
+	    Points		    [0, -10]
+	    DstBlock		    "Trigonometric\nFunction"
+	    DstPort		    1
+	  }
+	  Branch {
+	    ZOrder		    3
+	    Points		    [0, 65]
+	    DstBlock		    "Trigonometric\nFunction1"
+	    DstPort		    1
+	  }
+	}
+	Line {
+	  ZOrder		  4
+	  SrcBlock		  "Zero-Order\nHold1"
+	  SrcPort		  1
+	  DstBlock		  "Gain"
+	  DstPort		  1
+	}
+	Line {
+	  ZOrder		  5
+	  SrcBlock		  "Ramp"
+	  SrcPort		  1
+	  DstBlock		  "Zero-Order\nHold1"
+	  DstPort		  1
+	}
+	Line {
+	  ZOrder		  6
+	  SrcBlock		  "Trigonometric\nFunction"
+	  SrcPort		  1
+	  Points		  [55, 0; 0, 60]
+	  DstBlock		  "Mux3"
+	  DstPort		  1
+	}
+	Line {
+	  ZOrder		  7
+	  SrcBlock		  "Trigonometric\nFunction1"
+	  SrcPort		  1
+	  DstBlock		  "Mux3"
 	  DstPort		  2
 	}
 	Line {
-	  ZOrder		  16
-	  SrcBlock		  "beta"
+	  ZOrder		  8
+	  SrcBlock		  "Step4"
 	  SrcPort		  1
-	  Points		  [140, 0; 0, -90]
-	  DstBlock		  "Mux"
+	  Points		  [75, 0; 0, -55]
+	  DstBlock		  "Mux3"
 	  DstPort		  3
 	}
 	Line {
-	  Name			  "r"
-	  ZOrder		  17
-	  SrcBlock		  "Mux"
+	  ZOrder		  9
+	  Labels		  [0, 0]
+	  SrcBlock		  "Step3"
 	  SrcPort		  1
-	  Points		  [13, 0]
-	  Branch {
-	    ZOrder		    23
-	    Labels		    [2, 1]
-	    Points		    [0, -55]
-	    DstBlock		    "Scope"
-	    DstPort		    1
-	  }
-	  Branch {
-	    ZOrder		    21
-	    DstBlock		    "ref"
-	    DstPort		    1
-	  }
-	}
-	Line {
-	  ZOrder		  24
-	  SrcBlock		  "Step1"
-	  SrcPort		  1
-	  DstBlock		  "Transfer Fcn"
-	  DstPort		  1
-	}
-	Line {
-	  ZOrder		  25
-	  SrcBlock		  "Step5"
-	  SrcPort		  1
-	  DstBlock		  "Transfer Fcn3"
-	  DstPort		  1
-	}
-	Line {
-	  ZOrder		  26
-	  SrcBlock		  "Transfer Fcn"
-	  SrcPort		  1
-	  DstBlock		  "Mux"
-	  DstPort		  1
-	}
-	Line {
-	  ZOrder		  27
-	  SrcBlock		  "Transfer Fcn3"
-	  SrcPort		  1
-	  Points		  [63, 0; 0, -135]
-	  DstBlock		  "Mux"
+	  Points		  [120, 0; 0, -95]
+	  DstBlock		  "Mux3"
 	  DstPort		  4
+	}
+	Line {
+	  ZOrder		  10
+	  SrcBlock		  "Mux3"
+	  SrcPort		  1
+	  DstBlock		  "ref"
+	  DstPort		  1
 	}
       }
     }
@@ -3386,13 +3391,19 @@ Model {
       }
     }
     Line {
-      ZOrder		      64
-      SrcBlock		      "Manual Switch"
+      ZOrder		      37
+      SrcBlock		      "Reference filter"
       SrcPort		      1
-      Points		      [30, 0]
+      Points		      [0, -5; 15, 0]
       Branch {
-	ZOrder			63
-	Points			[0, 80]
+	ZOrder			38
+	Points			[40, 0]
+	DstBlock		"Mux2"
+	DstPort			2
+      }
+      Branch {
+	ZOrder			39
+	Points			[0, 75]
 	Branch {
 	  ZOrder		  40
 	  DstBlock		  "Demux"
@@ -3404,18 +3415,6 @@ Model {
 	  DstBlock		  "To Workspace6"
 	  DstPort		  1
 	}
-      }
-      Branch {
-	ZOrder			38
-	Points			[40, 0]
-	DstBlock		"Mux2"
-	DstPort			2
-      }
-      Branch {
-	ZOrder			65
-	Points			[0, -145]
-	DstBlock		"Scope1"
-	DstPort			1
       }
     }
     Line {
@@ -3480,27 +3479,37 @@ Model {
       DstPort		      2
     }
     Line {
-      ZOrder		      68
-      SrcBlock		      "reference 1\nsteps"
+      ZOrder		      52
+      SrcBlock		      "Manual Switch"
       SrcPort		      1
-      DstBlock		      "Reference filter \n(LP)"
+      Points		      [11, 0]
+      Branch {
+	ZOrder			60
+	Points			[0, -85]
+	DstBlock		"Scope"
+	DstPort			1
+      }
+      Branch {
+	ZOrder			59
+	DstBlock		"Reference filter"
+	DstPort			1
+      }
+    }
+    Line {
+      ZOrder		      55
+      SrcBlock		      "reference 1"
+      SrcPort		      1
+      Points		      [32, 0; 0, 85]
+      DstBlock		      "Manual Switch"
       DstPort		      1
     }
     Line {
-      ZOrder		      67
+      ZOrder		      58
       SrcBlock		      "reference 2"
       SrcPort		      1
-      Points		      [63, 0; 0, -25]
+      Points		      [23, 0; 0, -15]
       DstBlock		      "Manual Switch"
       DstPort		      2
-    }
-    Line {
-      ZOrder		      66
-      SrcBlock		      "Reference filter \n(LP)"
-      SrcPort		      1
-      Points		      [30, 0]
-      DstBlock		      "Manual Switch"
-      DstPort		      1
     }
   }
 }

@@ -327,16 +327,17 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 fprintf('simulate system with constant r and disturbance filter\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1,filter);
 
-%%%%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Part 5
+% Part 5
 % run part 4 first
 close all
+f_eight = 0.5 % rad/s
 sim('simulation2.mdl')
 
 
-%%%%%%%%%%%%%%%%%%%%%%%  Slew Rate Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%  Slew Rate Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART VI - Slew Rate Constraints...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
