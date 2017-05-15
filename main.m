@@ -214,15 +214,115 @@ rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,
 simQuad( sys, mpc_simple, 0, zeros(7,1), 20, rt);
 
 
-%%%%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
 fprintf('PART III - First simulation of the nonlinear model...\n')
+close all; 
+innerController = mpc_simple; 
+sim('simulation1.mdl'); 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART IV - Offset free MPC...\n')
+
+% define L
+Lx = eye(7);
+Ld = eye(7); 
+L = [Lx; Ld]; 
+
+% Setup
+n_states = 7;
+n_dist = 7; 
+n_input = 4;
+N =5; 
+N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
+
+% cost matrices
+Q = diag([1,50,50,1,0.1,0.1,0.1])
+R = 0.1*eye(n_input)
+P = eye(n_states)
+Rs = eye(n_input)
+
+% yalmip variables
+delta_x = sdpvar(n_states, N,'full');
+delta_u = sdpvar(n_input, N,'full');
+
+r = sdpvar(4,1,'full');
+xr = sdpvar(n_states,1,'full')
+ur = sdpvar(n_input,1,'full')
+
+xk = sdpvar(n_states,1,'full')
+uk = sdpvar(n_input,1,'full')
+
+C = [eye(4) zeros(4,3)];
+
+% state constraints
+z_dot_max = 1;
+alpha_beta_max = degtorad(10);
+alpha_beta_dot_max = degtorad(15) ;
+gamma_dot_max = degtorad(60);
+u_min = 0-us
+u_max = 1-us
+
+x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
+r1 = [1 0.1745 -0.1745 1.7453]'; 
+
+% compute target state ts: (xr, ur)
+xrur = inv([eye(n_states)-sys.A -sys.B; C zeros(4,n_input)])*[zeros(n_states,1); r1]
+%xr = [r1; 0; 0; 0];
+%ur = xrur(n_states + 1 : end);
+
+% Constraints
+fprintf('setting constraints \n')
+
+constraints_mpc = [];
+
+%target constraints
+constraints_mpc = constraints_mpc + [C*xr == r];
+constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur == xr];
+
+%delta shifting
+constraints_mpc = constraints_mpc + [delta_x(:,1) == xk-xr];
+constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
+ 
+for i = 2:N
+    %system constraints
+    constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1)];
+    
+    %state constraints
+    constraints_mpc =  constraints_mpc +  [-z_dot_max-xr(1) <= delta_x(1,i) <= z_dot_max-xr(1)];
+    constraints_mpc =  constraints_mpc + [-alpha_beta_max-xr(2:3)  <= delta_x(2:3,i) <= alpha_beta_max-xr(2:3)];
+    constraints_mpc = constraints_mpc + [-alpha_beta_dot_max-xr(5:6)  <= delta_x(5:6,i) <= alpha_beta_dot_max-xr(5:6)];
+    constraints_mpc = constraints_mpc + [-gamma_dot_max-xr(7)  <= delta_x(7,i) <= gamma_dot_max-xr(7)];
+
+    %input constraints
+    
+    constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
+end
+constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
+
+%Objective / Cost Function
+fprintf('setting objective function\n')
+objective_mpc = 0;
+for i = 1:N
+    objective_mpc = objective_mpc + delta_x(:,i)' * Q * delta_x(:,i) + delta_u(:,i)' * R * delta_u(:,i);
+end
+
+[Pinf,L,Finf] = dare(sys.A,sys.B,Q,R);
+
+terminal_cost = delta_x(:,N)' * Pinf * delta_x(:,N);
+objective_mpc = objective_mpc + terminal_cost;
+
+% Setup MPC
+fprintf('set up mpc problem\n')
+
+mpc_simple = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
