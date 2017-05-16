@@ -312,6 +312,10 @@ Caug = [eye(n_states) eye(n_states)];
 
 Lx = diag([1 0 0 0 1 1 1]);
 Ld = diag([1 0 0 0 1 1 1]);
+% Lx = diag([1 1 1 1 1 1 1]);
+% Ld = diag([1 1 1 1 1 1 1]);
+
+
 L = [Lx; Ld];
 
 filter = struct('Af', Aug - L*Caug, 'Bf', [Baug L]);
@@ -325,13 +329,14 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1,filter);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
 
 %% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 5
 % run part 4 first
+dist = true;
 close all
 w_eight = 2*pi*0.05; % rad/s
 t_sim = 4/(w_eight/(2*pi));
