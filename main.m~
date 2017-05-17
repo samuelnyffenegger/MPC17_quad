@@ -370,7 +370,7 @@ ur = sdpvar(n_inputs,1,'full');
 
 xk = sdpvar(n_states,1,'full');
 uk = sdpvar(n_inputs,1,'full');
-% u_prev = sdpvar(1);
+u_prev = sdpvar(1);
 
 d = sdpvar(n_states, 1, 'full');
 
@@ -385,11 +385,13 @@ gamma_dot_max = degtorad(60);
 u_min = 0-us;
 u_max = 1-us;
 
-x0 =  [0 0 0 0 0 0 0]';
+x0 =  [-1 0.1745 -0.1745 0.8727 0 0 0]';
 r1 = [0.8 0.12 -0.12 pi/2]'; 
 
 % Constraints
 fprintf('setting constraints \n')
+
+% slew rate constraints
 constraints_mpc = [];
 
 %target constraints
@@ -414,8 +416,8 @@ for i = 2:N
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
     
     % slew rate constraints
-    Delta = 0.3;
-    constraints_mpc = constraints_mpc + [-Delta <= diff([delta_u(1:4,i) delta_u(1:4,i-1)]) <= Delta];
+    Delta = 1;
+    constraints_mpc = constraints_mpc + [-Delta <= diff([uk(1:4,i) uk(1,1)]) <= Delta];
 
 end
 constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
