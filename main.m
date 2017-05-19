@@ -681,6 +681,8 @@ L = [Lx; Ld];
 filter = struct('Af', Aug - L*Caug, 'Bf', [Baug L]);
 
 
+% without disturbances
+
 % Setup MPC
 fprintf('set up mpc problem\n')
 
@@ -694,6 +696,25 @@ fprintf('simulate system with constant r and disturbance filter\n')
 [xt ut t rt_forces_free deltat] = simQuad( sys, innerControllerForces, 1, zeros(7,1), 10, r1);
 [xt ut t rt_free deltat] = simQuad( sys, innerController, 0, zeros(7,1), 10, r1);
 
+
+%% with disturbances
+codeoptions = getOptions('simpleMPC_solver');
+innerControllerForces = optimizerFORCES(constraints_mpc, objective_mpc, codeoptions, [xk; r; d], uk,{'xinit'},{'u0'});
+innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
+
+fprintf('simulate system with constant r and disturbance filter\n')
+[xt ut t rt_forces_d deltat] = simQuad( sys, innerControllerForces, 1, zeros(7,1), 10, r1,filter);
+[xt ut t rt_d deltat] = simQuad( sys, innerController, 0, zeros(7,1), 10, r1,filter);
+
+
+%% 
+clc
+rt_forces_free
+rt_free
+
+
+rt_forces_d
+rt_d
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
