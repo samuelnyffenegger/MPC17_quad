@@ -483,6 +483,7 @@ P = eye(n_states);
 % yalmip variables
 delta_x = sdpvar(n_states, N,'full');
 delta_u = sdpvar(n_inputs, N,'full');
+epsi = sdpvar(n_inputs, N, 'full');
 
 r = sdpvar(4,1,'full');
 xr = sdpvar(n_states,1,'full');
@@ -517,6 +518,7 @@ constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 %delta shifting
 constraints_mpc = constraints_mpc + [delta_x(:,1) == xk-xr];
 constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
+
  
 for i = 2:N
     % system constraints
@@ -531,9 +533,12 @@ for i = 2:N
     %input constraints
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
     
-    % slew rate constraints
-    Delta = 0.3;
-    constraints_mpc = constraints_mpc + [-Delta <= diff([delta_u(1:4,i) delta_u(1:4,i-1)]) <= Delta];
+    % soft slew rate constraints
+    Delta = 0.3*ones(n_inputs,1);
+    constraints_mpc = constraints_mpc + [ abs(delta_u(1:4,i) - delta_u(1:4,i-1)) <= Delta ];
+    % constraints_mpc = constraints_mpc + [ abs(delta_u(1:4,i) - delta_u(1:4,i-1)) <= Delta + epsi(:,i) ];
+    constraints_mpc = constraints_mpc + [ epsi(:,i) >= 0 ];
+    
 
 end
 constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
@@ -570,7 +575,7 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, 0);
 
 disp('done!')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
