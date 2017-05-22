@@ -108,7 +108,7 @@ mpc_simple = optimizer(constraints_mpc, objective_mpc, [], parameters, wanted);
 
 % Simulation
 fprintf('simulate system\n')
-simQuad( sys, mpc_simple, 0, x0, 20);
+simQuad( sys, mpc_simple, 0, x0, 10);
 
 %% Part 2
 %%%%%%%%%%%%%%%%%%%%%  Reference Tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,7 +122,7 @@ N =5;
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([1,50,50,1,0.1,0.1,0.1])
+Q = diag([1,70,70,1,0.1,0.1,0.1])
 R = 0.1*eye(n_inputs)
 P = eye(n_states)
 
