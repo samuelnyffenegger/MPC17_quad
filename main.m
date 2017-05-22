@@ -381,7 +381,7 @@ ur = sdpvar(n_inputs,1,'full');
 
 xk = sdpvar(n_states,1,'full');
 uk = sdpvar(n_inputs,1,'full');
-% u_prev = sdpvar(1);
+u0 = sdpvar(n_inputs,1,'full');
 
 d = sdpvar(n_states, 1, 'full');
 
@@ -404,7 +404,7 @@ fprintf('setting constraints \n')
 constraints_mpc = [];
 
 %target constraints
-constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+constraints_mpc = constraints_mpc + [C*xr == r];
 constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 
 %delta shifting
@@ -425,11 +425,13 @@ for i = 2:N
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
     
     % slew rate constraints
-    Delta = 0.3;
-    constraints_mpc = constraints_mpc + [-Delta <= diff([delta_u(1:4,i) delta_u(1:4,i-1)]) <= Delta];
+    Delta = 0.18;
+    constraints_mpc = constraints_mpc + [ abs(delta_u(:,i) - delta_u(:,i-1)) <= Delta];
 
 end
 constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
+constraints_mpc = constraints_mpc + [ abs(delta_u(:,1) - (u0-ur)) <= Delta ];
+
 
 %Objective / Cost Function
 fprintf('setting objective function\n')
@@ -449,10 +451,10 @@ Aug = [sys.A eye(n_states); zeros(n_states) eye(n_states)];
 Baug = [sys.B; zeros(n_states,n_inputs)];
 Caug = [eye(n_states) eye(n_states)];
 
-Lx = diag([1 0 0 0 1 1 1]);
-Ld = diag([1 0 0 0 1 1 1]);
-% Lx = diag([1 1 1 1 1 1 1]);
-% Ld = diag([1 1 1 1 1 1 1]);
+% Lx = diag([1 0 0 0 1 1 1]);
+% Ld = diag([1 0 0 0 1 1 1]);
+Lx = diag([1 1 1 1 1 1 1]);
+Ld = diag([1 1 1 1 1 1 1]);
 
 
 L = [Lx; Ld];
@@ -462,13 +464,14 @@ filter = struct('Af', Aug - L*Caug, 'Bf', [Baug L]);
 
 % Setup MPC
 fprintf('set up mpc problem\n')
-
-innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
+innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; u0; d], uk);
 
 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 1);
+
+figure(1); figure(4);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -478,14 +481,14 @@ fprintf('PART VII - Soft Constraints...\n')
 
 % implemented with offset free distirbance
 
-close all
+close all; clc; 
 
 % Setup
 n_states = 7;
 n_inputs = 4;
 N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
-Delta = 0.3*ones(n_inputs,1);
+Delta = 0.18;
 ui = 1;
 vi = 0.1;
 
@@ -497,11 +500,12 @@ P = eye(n_states);
 % yalmip variables
 delta_x = sdpvar(n_states, N,'full');
 delta_u = sdpvar(n_inputs, N,'full');
-epsi = sdpvar(n_inputs, 1, 'full');
+epsilon = sdpvar(n_inputs, N, 'full');
 
 r = sdpvar(4,1,'full');
 xr = sdpvar(n_states,1,'full');
 ur = sdpvar(n_inputs,1,'full');
+u0 = sdpvar(n_inputs,1,'full');
 
 xk = sdpvar(n_states,1,'full');
 uk = sdpvar(n_inputs,1,'full');
@@ -526,7 +530,7 @@ fprintf('setting constraints \n')
 constraints_mpc = [];
 
 %target constraints
-constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+constraints_mpc = constraints_mpc + [C*xr == r];
 constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 
 %delta shifting
@@ -548,10 +552,9 @@ for i = 2:N
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
     
     % soft slew rate constraints
-    constraints_mpc = constraints_mpc + [ abs(delta_u(1:4,i) - delta_u(1:4,i-1)) <= Delta + epsi ];
-    constraints_mpc = constraints_mpc + [ epsi >= 0 ];
+    constraints_mpc = constraints_mpc + [ abs(delta_u(:,i) - delta_u(:,i-1)) <= Delta + epsilon(:,i)];
+    constraints_mpc = constraints_mpc + [ epsilon(:,i) >= 0 ];
     
-
 end
 constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
 
@@ -559,7 +562,9 @@ constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,1) <= u_max-ur ];
 fprintf('setting objective function\n')
 objective_mpc = 0;
 for i = 1:N
-    objective_mpc = objective_mpc + delta_x(:,i)' * Q * delta_x(:,i) + delta_u(:,i)' * R * delta_u(:,i) + ui*sum(epsi) + vi*epsi'*epsi;
+    % TODO: change this formula
+    objective_mpc = objective_mpc + delta_x(:,i)' * Q * delta_x(:,i) + delta_u(:,i)' * R * delta_u(:,i) + ...
+                    ui*sum(epsilon(:,i)) + vi*epsilon(:,i)'*epsilon(:,i);
 end
 
 [Pinf,L,Finf] = dare(sys.A,sys.B,Q,R);
@@ -573,35 +578,36 @@ Aug = [sys.A eye(n_states); zeros(n_states) eye(n_states)];
 Baug = [sys.B; zeros(n_states,n_inputs)];
 Caug = [eye(n_states) eye(n_states)];
 
-Lx = diag([1 0 0 0 1 1 1]);
-Ld = diag([1 0 0 0 1 1 1]);
-% Lx = diag([1 1 1 1 1 1 1]);
-% Ld = diag([1 1 1 1 1 1 1]);
+% Lx = diag([1 0 0 0 1 1 1]);
+% Ld = diag([1 0 0 0 1 1 1]);
+Lx = diag([1 1 1 1 1 1 1]);
+Ld = diag([1 1 1 1 1 1 1]);
 L = [Lx; Ld];
 filter = struct('Af', Aug - L*Caug, 'Bf', [Baug L]);
 
 
 % Setup MPC
 fprintf('set up mpc problem\n')
-innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
+innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; u0; d], [uk, epsilon(:,1)]);
 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, 0);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 2);
 
-disp('done!')
+
+figure(1); figure(4);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%  FORCES Pro %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART VIII - FORCES Pro...\n')
 
-%% Part 4
+% Part 4
 close all
 
 % Setup
 n_states = 7;
 n_inputs = 4;
-N =5; 
+N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
@@ -641,7 +647,7 @@ fprintf('setting constraints \n')
 constraints_mpc = [];
 
 %target constraints
-constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+constraints_mpc = constraints_mpc + [C*xr == r];
 constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 
 %delta shifting
@@ -681,10 +687,10 @@ Aug = [sys.A eye(n_states); zeros(n_states) eye(n_states)];
 Baug = [sys.B; zeros(n_states,n_inputs)];
 Caug = [eye(n_states) eye(n_states)];
 
-Lx = diag([1 0 0 0 1 1 1]);
-Ld = diag([1 0 0 0 1 1 1]);
-% Lx = diag([1 1 1 1 1 1 1]);
-% Ld = diag([1 1 1 1 1 1 1]);
+% Lx = diag([1 0 0 0 1 1 1]);
+% Ld = diag([1 0 0 0 1 1 1]);
+Lx = diag([1 1 1 1 1 1 1]);
+Ld = diag([1 1 1 1 1 1 1]);
 
 
 L = [Lx; Ld];
