@@ -231,7 +231,7 @@ close all
 % Setup
 n_states = 7;
 n_inputs = 4;
-N =5; 
+N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
@@ -271,7 +271,8 @@ fprintf('setting constraints \n')
 constraints_mpc = [];
 
 %target constraints
-constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+% constraints_mpc = constraints_mpc + [C*xr+C*d == r];
+constraints_mpc = constraints_mpc + [C*xr == r];
 constraints_mpc = constraints_mpc + [sys.A*xr+sys.B*ur+d == xr];
 
 %delta shifting
@@ -280,7 +281,7 @@ constraints_mpc = constraints_mpc + [delta_u(:,1) == uk-ur];
  
 for i = 2:N
     %system constraints
-    constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1)];  % add a disturbance d here? subtract d?
+    constraints_mpc = constraints_mpc + [delta_x(:,i) == sys.A*delta_x(:,i-1)+sys.B*delta_u(:,i-1) ];  % add a disturbance d here? subtract d?
 %     %state constraints
     constraints_mpc =  constraints_mpc +  [-z_dot_max-xr(1) <= delta_x(1,i) <= z_dot_max-xr(1)];
     constraints_mpc =  constraints_mpc + [-alpha_beta_max-xr(2:3)  <= delta_x(2:3,i) <= alpha_beta_max-xr(2:3)];
@@ -312,8 +313,8 @@ Caug = [eye(n_states) eye(n_states)];
 
 Lx = diag([1 0 0 0 1 1 1]);
 Ld = diag([1 0 0 0 1 1 1]);
-% Lx = diag([1 1 1 1 1 1 1]);
-% Ld = diag([1 1 1 1 1 1 1]);
+Lx = diag([1 1 1 1 1 1 1]);
+Ld = diag([1 1 1 1 1 1 1]);
 
 
 L = [Lx; Ld];
@@ -330,6 +331,16 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
+
+
+fprintf('simulate system with varying r r\n')
+t_sim = 20;
+n_k = t_sim/sys.Ts;
+k = 1:n_k;
+rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,1,n_k) ];
+simQuad( sys, innerController, 0, zeros(7,1), t_sim, rt, filter);
+
+figure(1); figure(4);
 
 %% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
