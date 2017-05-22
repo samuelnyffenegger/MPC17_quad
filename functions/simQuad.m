@@ -16,6 +16,9 @@
 % useSlewRateConst - if is supplied and equal to 1 you can run the MPC with slew rate
 %                    on the input constraints, while if equal to 2 you can run MPC
 %                    with soft constraints on the slew rate of the input
+% combinePlots     - does not create 6 or 9 individual plots but combines
+%                    them to 1 or 2 plots
+%
 %OUTPUTS:
 %     xt - state as a function of time
 %     ut - input as a function of time
@@ -23,19 +26,21 @@
 %     rt - average running time of the solver
 % deltat - slack variable of soft constraints
 
-function [xt ut t rt deltat] =  simQuad( sys, ctrl, bForces, x0, T, ref, filter, d, useSlewRateConst)
+function [xt ut t rt deltat] =  simQuad( sys, ctrl, bForces, x0, T, ref, filter, d, useSlewRateConst, combinePlots)
+
 Ts = sys.Ts;
 Ns = floor(T / Ts)+1; %integer number of steps
 A = sys.A;
 B = sys.B;
 
+if ~exist('combinePlots','var'); combinePlots = true; end; 
+    
 if(exist('filter','var') && ~isempty(filter) && (~exist('d','var') || isempty(d)))
     d_mean = repmat([-0.1;0;0;0;6e-4;6e-4;3e-4],1,Ns);
     % d_mean = repmat([-0.1;deg2rad(0.5);deg2rad(0.1);deg2rad(0.1);6e-4;6e-4;3e-4],1,Ns);
     d_rand = [zeros(4,Ns);1e-2*diag([1;1;20])*(rand(3,Ns)-0.5)];
     d = 1*d_mean + 1*d_rand;
 end
-
 
 n1 = size(A,1); m1 = size(B,2);
 x = x0; % initial state
@@ -148,69 +153,144 @@ sys.angVelMin   = -[15;15;60]*pi/180;
 sys.angVelMax   = [15;15;60]*pi/180;
 
 
-figure(1); clf; grid on; hold on;
-plot(t, theta(:,1)*180/pi, t, theta(:,2)*180/pi, 'LineWidth',1.1);
-plot(t, ref(2,:)*180/pi,'--', t, ref(3,:)*180/pi,'--','LineWidth',1.0);
-plot(t,repmat(sys.angleMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-plot(t,repmat(sys.angleMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-legend('Roll', 'Pitch', 'Roll ref', 'Pitch ref', ' Constraints');
-ylabel('deg'); xlabel('s')
+if combinePlots
+    %%
+    disp('Linking figures...')
+    figure(1); clf; 
+    ax(1) = subplot(3,2,1); grid on; hold on;
+        plot(t, theta(:,1)*180/pi, t, theta(:,2)*180/pi, 'LineWidth',1.1);
+        plot(t, ref(2,:)*180/pi,'--', t, ref(3,:)*180/pi,'--','LineWidth',1.0);
+        plot(t,repmat(sys.angleMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        plot(t,repmat(sys.angleMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        legend('Roll', 'Pitch', 'Roll ref', 'Pitch ref', ' Constraints','location','SE');
+        ylabel('deg'); xlabel('s')
+        
+    ax(3) = subplot(3,2,3); grid on; hold on;
+        plot(t, theta(:,3)*180/pi,'LineWidth',1.1);
+        plot(t,180*ref(4,:)/pi,'--')
+        legend('Yaw','Yaw ref','location','SE');
+        ylabel('deg'); xlabel('s')
 
-figure(2); clf; grid on; hold on;
-plot(t, theta(:,3)*180/pi,'LineWidth',1.1);
-plot(t,180*ref(4,:)/pi,'--')
-legend('Yaw','Yaw ref');
-ylabel('deg'); xlabel('s')
+    ax(6) = subplot(3,2,6); grid on; hold on;
+        plot(t, u(:,1), t, u(:,2), t, u(:,3), t, u(:,4),'LineWidth',1.1);
+        plot(t,repmat(sys.uMin(1),Ns)','--','Color','Red','LineWidth',2)
+        plot(t,repmat(sys.uMax(1),Ns)','--','Color','Red','LineWidth',2)
+        legend('rotor speed 1', 'rotor speed 2', 'rotor speed 3', 'rotor speed 4', 'Constraints','location','SE');
+        axis([0,t(end),sys.uMin(1)-0.1,0.1+sys.uMax(1)])
+        ylabel('u'); xlabel('s')
 
+    ax(5) = subplot(3,2,5); grid on; hold on;
+        plot(t, zdot,'LineWidth',1.1);
+        plot(t,ref(1,:),'--');
+        plot(t,repmat(sys.zVelMin,Ns)','--','Color','Red','LineWidth',2)
+        plot(t,repmat(sys.zVelMax,Ns)','--','Color','Red','LineWidth',2)
+        legend('zdot', 'zdot ref','Constraints','location','SE');
+        ylabel('m / s'); xlabel('s')
+ 
+    ax(2) = subplot(3,2,2); grid on; hold on;
+        plot(t, omega(:,1)*180/pi, t, omega(:,2)*180/pi,'LineWidth',1.1);
+        plot(t,repmat(sys.angVelMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        plot(t,repmat(sys.angVelMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        legend('Roll rate', 'Pitch rate', 'Constraints','location','SE');
+        ylabel('deg / s'); xlabel('s')
 
-figure(3); clf; grid on; hold on;
-plot(t,repmat(sys.uMin(1),Ns)','--','Color','Red','LineWidth',2)
-plot(t,repmat(sys.uMax(1),Ns)','--','Color','Red','LineWidth',2)
-plot(t, u(:,1), t, u(:,2), t, u(:,3), t, u(:,4),'LineWidth',1.1);
-legend('Constraints', 'rotor speed 1', 'rotor speed 2', 'rotor speed 3', 'rotor speed 4');
-axis([0,t(end),sys.uMin(1)-0.1,0.1+sys.uMax(1)])
-ylabel('u'); xlabel('s')
-
-
-figure(4); clf; grid on; hold on;
-plot(t, zdot,'LineWidth',1.1);
-plot(t,ref(1,:),'--');
-plot(t,repmat(sys.zVelMin,Ns)','--','Color','Red','LineWidth',2)
-plot(t,repmat(sys.zVelMax,Ns)','--','Color','Red','LineWidth',2)
-legend('zdot', 'zdot ref','Constraints');
-ylabel('m / s'); xlabel('s')
-
-figure(5); clf; grid on; hold on;
-plot(t, omega(:,1)*180/pi, t, omega(:,2)*180/pi,'LineWidth',1.1);
-plot(t,repmat(sys.angVelMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-plot(t,repmat(sys.angVelMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-legend('Roll rate', 'Pitch rate', 'Constraints');
-ylabel('deg / s'); xlabel('s')
-
-
-figure(6); clf; grid on; hold on;
-plot(t, omega(:,3)*180/pi,'LineWidth',1.1);
-plot(t,repmat(sys.angVelMin(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-plot(t,repmat(sys.angVelMax(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
-legend('Yaw rate', ' Constraints');
-ylabel('deg / s'); xlabel('s')
-
-if(~isempty(filter))
-    figure(8); clf; grid on; hold on;
-    plot(t, xft(8,1:end-1), 'LineWidth',1.1);
-    legend('dz dist'); 
-    title('z dot disturbance estimate')
+    ax(4) = subplot(3,2,4); grid on; hold on;
+        plot(t, omega(:,3)*180/pi,'LineWidth',1.1);
+        plot(t,repmat(sys.angVelMin(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        plot(t,repmat(sys.angVelMax(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+        legend('Yaw rate', ' Constraints','location','SE');
+        ylabel('deg / s'); xlabel('s')
     
-    figure(9); clf; grid on; hold on;
-    plot(t, xft(14,1:end-1), 'LineWidth',1.1);
-    legend('dyaw dist'); 
-    title('yaw dost disturbance estimate')
+    linkaxes(ax,'x');
+
+
+   if(~isempty(filter))
+        figure(2); clf; 
+       
+        ax(3) = subplot(3,1,3); grid on; hold on;
+            plot(t, xft(8,1:end-1), 'LineWidth',1.1);
+            legend('dz dist','location','SE'); 
+            title('z dot disturbance estimate')
+
+        ax(2) = subplot(3,1,2); grid on; hold on;
+            plot(t, xft(14,1:end-1), 'LineWidth',1.1);
+            legend('dyaw dist','location','SE'); 
+            title('yaw dost disturbance estimate')
+
+        ax(1) = subplot(3,1,1); grid on; hold on;
+            plot(t,xft(12,1:end-1), t,xft(13,1:end-1), 'LineWidth', 1.1);
+            legend('droll dist', 'dpitch dist','location','SE');
+            title('roll dot and pitch dot disturbance estimates')
+            
+        linkaxes(ax,'x')
+    end  
     
-    figure(10); clf; grid on; hold on;
-    plot(t,xft(12,1:end-1), t,xft(13,1:end-1), 'LineWidth', 1.1);
-    legend('droll dist', 'dpitch dist');
-    title('roll dot and pitch dot disturbance estimates')
+else
+    figure(1); clf; grid on; hold on;
+    plot(t, theta(:,1)*180/pi, t, theta(:,2)*180/pi, 'LineWidth',1.1);
+    plot(t, ref(2,:)*180/pi,'--', t, ref(3,:)*180/pi,'--','LineWidth',1.0);
+    plot(t,repmat(sys.angleMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    plot(t,repmat(sys.angleMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    legend('Roll', 'Pitch', 'Roll ref', 'Pitch ref', ' Constraints');
+    ylabel('deg'); xlabel('s')
+
+    figure(2); clf; grid on; hold on;
+    plot(t, theta(:,3)*180/pi,'LineWidth',1.1);
+    plot(t,180*ref(4,:)/pi,'--')
+    legend('Yaw','Yaw ref');
+    ylabel('deg'); xlabel('s')
+
+    figure(3); clf; grid on; hold on;
+    plot(t, u(:,1), t, u(:,2), t, u(:,3), t, u(:,4),'LineWidth',1.1);
+    plot(t,repmat(sys.uMin(1),Ns)','--','Color','Red','LineWidth',2)
+    plot(t,repmat(sys.uMax(1),Ns)','--','Color','Red','LineWidth',2)
+    legend('rotor speed 1', 'rotor speed 2', 'rotor speed 3', 'rotor speed 4', 'Constraints');
+    axis([0,t(end),sys.uMin(1)-0.1,0.1+sys.uMax(1)])
+    ylabel('u'); xlabel('s')
+
+
+    figure(4); clf; grid on; hold on;
+    plot(t, zdot,'LineWidth',1.1);
+    plot(t,ref(1,:),'--');
+    plot(t,repmat(sys.zVelMin,Ns)','--','Color','Red','LineWidth',2)
+    plot(t,repmat(sys.zVelMax,Ns)','--','Color','Red','LineWidth',2)
+    legend('zdot', 'zdot ref','Constraints');
+    ylabel('m / s'); xlabel('s')
+
+    figure(5); clf; grid on; hold on;
+    plot(t, omega(:,1)*180/pi, t, omega(:,2)*180/pi,'LineWidth',1.1);
+    plot(t,repmat(sys.angVelMin(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    plot(t,repmat(sys.angVelMax(1)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    legend('Roll rate', 'Pitch rate', 'Constraints');
+    ylabel('deg / s'); xlabel('s')
+
+
+    figure(6); clf; grid on; hold on;
+    plot(t, omega(:,3)*180/pi,'LineWidth',1.1);
+    plot(t,repmat(sys.angVelMin(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    plot(t,repmat(sys.angVelMax(3)*180/pi,Ns)','--','Color','Red','LineWidth',2)
+    legend('Yaw rate', ' Constraints');
+    ylabel('deg / s'); xlabel('s')
+
+    if(~isempty(filter))
+        figure(8); clf; grid on; hold on;
+        plot(t, xft(8,1:end-1), 'LineWidth',1.1);
+        legend('dz dist'); 
+        title('z dot disturbance estimate')
+
+        figure(9); clf; grid on; hold on;
+        plot(t, xft(14,1:end-1), 'LineWidth',1.1);
+        legend('dyaw dist'); 
+        title('yaw dost disturbance estimate')
+
+        figure(10); clf; grid on; hold on;
+        plot(t,xft(12,1:end-1), t,xft(13,1:end-1), 'LineWidth', 1.1);
+        legend('droll dist', 'dpitch dist');
+        title('roll dot and pitch dot disturbance estimates')
+    end  
 end
+
+
 
 
 end

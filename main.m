@@ -592,10 +592,12 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; u0; d], 
 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 2);
+
+%%
+close all; clc; 
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 2, 0);
 
 
-figure(1); figure(4);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%  FORCES Pro %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
