@@ -489,7 +489,7 @@ n_inputs = 4;
 N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 Delta = 0.18;
-ui = 1;
+ui = 1; 
 vi = 0.1;
 
 % cost matrices
