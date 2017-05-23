@@ -1,0 +1,3 @@
+L = [Lx; Ld] = [eye(7); eye(7)]
+
+Due to the independence of the disturbances, Lx and Ld were chosen diagonal. Their influence on the states are thus estimated directly and without bias or scaling.

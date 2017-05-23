@@ -1,0 +1,1 @@
+Delta was chosen between 0.16 and 0.2 in order to avoid performance deterioration or infeasibility problems.
