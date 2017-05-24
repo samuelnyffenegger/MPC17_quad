@@ -1,3 +1,4 @@
+% TODO: change and adapt plotQuadSimResult.m 
 
 clear all
 close all
@@ -118,7 +119,7 @@ fprintf('PART II - Reference tracking...\n')
 % Setup
 n_states = 7;
 n_inputs = 4;
-N =5; 
+N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
@@ -207,25 +208,27 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r], uk);
 fprintf('simulate system with constant r\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1);
 
+%
 fprintf('simulate system with varying r r\n')
-n_k = 150
+t_sim = 15;
+n_k = t_sim/sys.Ts;
 k = 1:n_k;
 rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,1,n_k) ];
-simQuad( sys, innerController, 0, zeros(7,1), 20, rt);
+simQuad( sys, innerController, 0, zeros(7,1), t_sim, rt);
 
 
-%%%%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%  First simulation of the nonlinear model %%%%%%%%%%%%%%%%%
 fprintf('PART III - First simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Part 3
+% Part 3
 % Atention: Part 2 needs to be run before running this part.
 close all
 sim('simulation1.mdl')
 
-%%%%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART IV - Offset free MPC...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Part 4
+% Part 4
 close all
 
 % Setup
@@ -235,7 +238,7 @@ N = 5;
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([10,50,50,1,0.1,0.1,0.1])
+Q = diag([10,70,70,1,0.1,0.1,0.1])
 R = 0.1*eye(n_inputs)
 P = eye(n_states)
 
@@ -332,15 +335,14 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 fprintf('simulate system with constant r and disturbance filter\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
 
-
+%
 fprintf('simulate system with varying r r\n')
-t_sim = 20;
+t_sim = 15;
 n_k = t_sim/sys.Ts;
 k = 1:n_k;
 rt = [repmat(1,1,n_k); 0.1745*sin(sys.Ts*k); -0.1745*sin(sys.Ts*k); repmat(pi/2,1,n_k) ];
 simQuad( sys, innerController, 0, zeros(7,1), t_sim, rt, filter);
 
-figure(1); figure(4);
 
 %% %%%%%%%%%%%%%%%%  Simulation of the nonlinear model %%%%%%%%%%%%%%%%%%%%
 fprintf('PART V - simulation of the nonlinear model...\n')
@@ -367,7 +369,7 @@ N = 5;
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([10,50,50,1,0.1,0.1,0.1]);
+Q = diag([10,70,70,1,0.1,0.1,0.1]);
 R = 0.1*eye(n_inputs);
 P = eye(n_states);
 
@@ -425,7 +427,7 @@ for i = 2:N
     constraints_mpc = constraints_mpc + [u_min-ur <= delta_u(1:4,i) <= u_max-ur ];
     
     % slew rate constraints
-    Delta = 0.18;
+    Delta = 0.19;
     constraints_mpc = constraints_mpc + [ abs(delta_u(:,i) - delta_u(:,i-1)) <= Delta];
 
 end
@@ -471,8 +473,6 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; u0; d], 
 fprintf('simulate system with constant r and disturbance filter\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 1);
 
-figure(1); figure(4);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -488,12 +488,12 @@ n_states = 7;
 n_inputs = 4;
 N = 5; 
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
-Delta = 0.18;
+Delta = 0.10;
 ui = 1; 
 vi = 0.1;
 
 % cost matrices
-Q = diag([10,50,50,1,0.1,0.1,0.1]);
+Q = diag([10,70,70,1,0.1,0.1,0.1]);
 R = 0.1*eye(n_inputs);
 P = eye(n_states);
 
@@ -593,9 +593,8 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; u0; d], 
 % Simulation constant r
 fprintf('simulate system with constant r and disturbance filter\n')
 
-%%
 close all; clc; 
-simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 2, 0);
+simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter, [], 2);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -613,7 +612,7 @@ N = 5;
 N = N+1; % account for the fact that mpc is defined for x0-xN, but matlab array indexing starts at 1.
 
 % cost matrices
-Q = diag([10,50,50,1,0.1,0.1,0.1])
+Q = diag([10,70,70,1,0.1,0.1,0.1])
 R = 0.1*eye(n_inputs)
 P = eye(n_states)
 
