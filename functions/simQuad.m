@@ -210,17 +210,20 @@ if combinePlots
         ax(3) = subplot(3,1,3); grid on; hold on;
             plot(t, xft(8,1:end-1), 'LineWidth',1.1);
             legend('dz dist','location','SE'); 
-            title('z dot disturbance estimate')
+            title('z dot disturbance estimate');
+            ylabel('m'); xlabel('s')
 
         ax(2) = subplot(3,1,2); grid on; hold on;
             plot(t, xft(14,1:end-1), 'LineWidth',1.1);
             legend('dyaw dist','location','SE'); 
             title('yaw dost disturbance estimate')
+            ylabel('deg'); xlabel('s')
 
         ax(1) = subplot(3,1,1); grid on; hold on;
             plot(t,xft(12,1:end-1), t,xft(13,1:end-1), 'LineWidth', 1.1);
             legend('droll dist', 'dpitch dist','location','SE');
             title('roll dot and pitch dot disturbance estimates')
+            ylabel('deg'); xlabel('s')
             
         linkaxes(ax,'x')
     end  

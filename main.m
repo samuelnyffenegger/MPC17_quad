@@ -1,5 +1,3 @@
-% TODO: change and adapt plotQuadSimResult.m 
-
 clear all
 close all
 clc
@@ -223,7 +221,8 @@ fprintf('PART III - First simulation of the nonlinear model...\n')
 % Part 3
 % Atention: Part 2 needs to be run before running this part.
 close all
-sim('simulation1.mdl')
+t_sim = 15;
+sim('simulation1_R2016b.mdl')
 
 %% %%%%%%%%%%%%%%%%%%%%%  Offset free MPC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('PART IV - Offset free MPC...\n')
@@ -335,7 +334,7 @@ innerController = optimizer(constraints_mpc, objective_mpc, [], [xk; r; d], uk);
 fprintf('simulate system with constant r and disturbance filter\n')
 simQuad( sys, innerController, 0, zeros(7,1), 10, r1, filter);
 
-%
+%%
 fprintf('simulate system with varying r r\n')
 t_sim = 15;
 n_k = t_sim/sys.Ts;
@@ -349,11 +348,14 @@ fprintf('PART V - simulation of the nonlinear model...\n')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Part 5
 % run part 4 first
+choseInput = 3; %1=step, 2=hexagon, 3=eight
+
 dist = true;
 close all
 w_eight = 2*pi*0.05; % rad/s
 t_sim = 4/(w_eight/(2*pi));
-sim('simulation2.mdl')
+% t_sim = 80;
+sim('simulation2_R2016b.slx')
 
 
 %% %%%%%%%%%%%%%%%%%%%%%  Slew Rate Constraints %%%%%%%%%%%%%%%%%%%%%%%%%%%
