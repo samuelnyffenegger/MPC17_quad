@@ -569,7 +569,7 @@ for i = 1:N
     objective_mpc = objective_mpc + v*epsilon(:,i) + s*epsilon(:,i).^2;
 end
 
-%objective_mpc = objective_mpc + v*epsilon(:,i) + s*epsilon(:,i).^2;
+
 
 
 [Pinf,~,Finf] = dare(sys.A,sys.B,Q,R);

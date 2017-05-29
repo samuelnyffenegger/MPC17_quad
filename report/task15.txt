@@ -1,0 +1,18 @@
+The cost function for the soft constraints was chosen as:
+
+delta_x = sdpvar(n_states, N,'full');
+delta_u = sdpvar(n_inputs, N,'full');
+
+delta = 0.1;
+
+v = 1*[1;1;1;1]'; 
+s = 0.1*[1;1;1;1]'; 
+
+objective_mpc = 0;
+for i = 1:N
+    objective_mpc = objective_mpc + delta_x(:,i)' * Q * delta_x(:,i) + delta_u(:,i)' * R * delta_u(:,i);
+    objective_mpc = objective_mpc + v*epsilon(:,i) + s*epsilon(:,i).^2;
+end
+
+%%% TODO:
+TERMINAL COST???
