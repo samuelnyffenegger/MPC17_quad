@@ -1,4 +1,4 @@
-Ac and Bc are the partial derivatives of system dynamics with respect to the states and inputs.
+Ac and Bc are the partial derivatives of system dynamics with respect to the states and inputs in order to linearize the system dynamics.
 
 F = (kF kF kF kF)*(u1 u2 u3 u4)’  		(1)
 xB’’ = uB’ = 1/m(F*sin(beta))     		(2)

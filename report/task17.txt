@@ -1,0 +1,11 @@
+Solver running time
+
+MPC reference tracking:
+
+Forces: 0.0081s
+Quadprog: 0.0256s
+
+Offset free MPC:
+
+Forces: 0.0087s
+Quadprog: 0.0264s
