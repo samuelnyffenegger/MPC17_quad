@@ -7,5 +7,5 @@ Quadprog: 0.0256s
 
 Offset free MPC:
 
-Forces: 0.0087s
-Quadprog: 0.0264s
+Forces: 0.0082s
+Quadprog: 0.0198s

@@ -9,6 +9,8 @@ The terminal set and terminal cost were chosen corresponding to a LQR controlled
 
 P was thus chosen as the solution of the DARE and the terminal set as the maximum positive invariant set of the autonomous system x(k+1) = (A-BK)x(k).
 
+A_x and b_x form the constraints of the polyhedral terminal set A_x * x <= b_x:
+
 A_x = 
  0   -1.1716         0         0   -0.1124         0         0
          0         0   -1.1716         0         0   -0.1124         0
